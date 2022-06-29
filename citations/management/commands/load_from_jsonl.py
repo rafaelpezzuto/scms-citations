@@ -1,11 +1,15 @@
 import json
 import os
-import subprocess
 
 from django.core.management.base import BaseCommand
-from django.db.utils import DataError
+
+from scielo_scholarly_data import standardizer
+from scielo_scholarly_data.dates import (InvalidFormatError, InvalidStringError)
 
 from citations.models import Citation
+
+
+LOADING_BULK_SIZE = int(os.environ.get('LOADING_BULK_SIZE', '100000'))
 
 
 class Command(BaseCommand):
@@ -36,6 +40,22 @@ class Command(BaseCommand):
         els = citation.citation_code.split('^c')
         citation.citation_code = '-'.join(els)
 
+    def _standardize_year(self, citation):
+        try:
+            std_year = standardizer.document_publication_date(citation.year, only_year=True)
+        except (TypeError, InvalidFormatError, InvalidStringError):
+            std_year = None
+
+        citation.year = std_year
+        
+    def _standardize_volume(self, citation):
+        try:
+            std_vol = standardizer.issue_volume(citation.volume)
+        except (TypeError, standardizer.ImpossibleConvertionToIntError, standardizer.InvalidRomanNumeralError):
+            std_vol = None
+
+        citation.volume = std_vol
+
     def handle(self, *args, **options):
         filename = options.get('citations')
 
@@ -43,24 +63,18 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR(f'Arquivo de citações não encontrado: {filename}'))
             return
 
-        try:
-            self.run_import(filename, self.field_mapping)
-        except subprocess.CalledProcessError as e:
-            self.stdout.write(self.style.ERROR(f'Erro ao executar comando: {e.cmd}'))
+        self.run_import(filename, self.field_mapping)
 
     def run_import(self, file, field_mapping):
-        self.stdout.write('Importando dados do JSONL para o PostgreSQL')
-        self.stdout.write(f'Origem: {file}')
+        self.stdout.write(f'Importando dados do JSONL {file} para o PostgreSQL')
 
         with open(file) as fin:
-            counter = 0
+            counter = 1
+            bsize = 1
+            citations = []
 
             for row in fin:
                 json_row = json.loads(row)
-
-                counter += 1
-                if counter % 1000 == 0:
-                    self.stdout.write(f'{counter} linhas processadas')
                 
                 cit = Citation()
                 for f in field_mapping:
@@ -70,8 +84,19 @@ class Command(BaseCommand):
                         setattr(cit, target, value)
 
                 self._standardize_citation_code(cit)
-                   
-                try:
-                    cit.save()
-                except DataError:
-                    self.stdout.write(f'Não foi possível gravar registro {row}')
+                self._standardize_year(cit)
+                self._standardize_volume(cit)
+                citations.append(cit)
+
+                counter += 1
+                if counter % LOADING_BULK_SIZE == 0:
+                    self.stdout.write(f'{counter} linhas processadas')
+
+                bsize += 1
+                if bsize >= LOADING_BULK_SIZE:
+                    Citation.objects.bulk_create(citations)
+                    bsize = 0
+                    citations = []
+
+            if len(citations) > 0:
+                Citation.objects.bulk_create(citations)

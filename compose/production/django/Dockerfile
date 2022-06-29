@@ -43,6 +43,7 @@ RUN addgroup --system django \
 
 # Install required system dependencies
 RUN apt-get update && apt-get install --no-install-recommends -y \
+  git \
   # psycopg2 dependencies
   libpq-dev \
   # Translations dependencies

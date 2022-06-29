@@ -10,6 +10,7 @@ FROM python as python-build-stage
 ENV PYTHONDONTWRITEBYTECODE 1
 
 RUN apt-get update && apt-get install --no-install-recommends -y \
+  git \
   # dependencies for building Python packages
   build-essential \
   # psycopg2 dependencies

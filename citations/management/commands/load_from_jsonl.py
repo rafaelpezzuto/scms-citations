@@ -1,9 +1,10 @@
 import json
 import os
-import subprocess
 
 from django.core.management.base import BaseCommand
-from django.db.utils import DataError
+
+from scielo_scholarly_data import standardizer
+from scielo_scholarly_data.dates import (InvalidFormatError, InvalidStringError)
 
 from citations.models import Citation
 

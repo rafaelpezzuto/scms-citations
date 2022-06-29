@@ -53,11 +53,12 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR(f'Erro ao executar comando: {e.cmd}'))
 
     def run_import(self, file, field_mapping):
-        self.stdout.write('Importando dados do JSONL para o PostgreSQL')
-        self.stdout.write(f'Origem: {file}')
+        self.stdout.write(f'Importando dados do JSONL {file} para o PostgreSQL')
 
         with open(file) as fin:
-            counter = 0
+            counter = 1
+            bsize = 1
+            citations = []
 
             for row in fin:
                 json_row = json.loads(row)
@@ -76,6 +77,17 @@ class Command(BaseCommand):
                 self._standardize_citation_code(cit)
                    
                 try:
-                    cit.save()
-                except DataError:
-                    self.stdout.write(f'Não foi possível gravar registro {row}')
+                citations.append(cit)
+
+                counter += 1
+                if counter % LOADING_BULK_SIZE == 0:
+                    self.stdout.write(f'{counter} linhas processadas')
+
+                bsize += 1
+                if bsize >= LOADING_BULK_SIZE:
+                    Citation.objects.bulk_create(citations)
+                    bsize = 0
+                    citations = []
+
+            if len(citations) > 0:
+                Citation.objects.bulk_create(citations)

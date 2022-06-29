@@ -98,6 +98,9 @@ dump_data: ## Dump database into .sql $(compose)
 restore_data: ## Restore database into from latest.sql file $(compose)
 	cat backup/latest.sql | docker exec -i scms_local_postgres psql -U debug
 
+django_load_from_jsonl: ## Load citations from citations.jsonl $(compose)
+	@docker-compose -f $(compose) run --rm django python manage.py load_from_jsonl
+
 ############################################
 ## Atalhos Úteis                          ##
 ############################################

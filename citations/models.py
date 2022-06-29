@@ -7,7 +7,7 @@ from . import choices
 
 
 class Citation(models.Model):
-    citation_code = models.CharField("Citation code", max_length=32, primary_key=True)
+    citation_code = models.CharField("Citation code", max_length=32, null=False, blank=False)
     title = models.CharField("Title", max_length=512, null=True, blank=True)
     volume = models.CharField("Volume", max_length=32, null=True, blank=True)
     year = models.SmallIntegerField("Year", null=True, blank=True)

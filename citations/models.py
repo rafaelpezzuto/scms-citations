@@ -13,7 +13,7 @@ class Citation(models.Model):
     year = models.SmallIntegerField("Year", null=True, blank=True)
     issn = models.CharField("ISSN", max_length=9, null=True, blank=True, db_index=True)
     issn_size_set = models.SmallIntegerField("ISSN size set", null=True, blank=True)
-    standardization_method = models.CharField("Standardization method", max_length=3, null=True, blank=True, choices=choices.STANDARDIZATION_METHOD)
+    standardization_method = models.SmallIntegerField("Standardization method", null=True, blank=False, choices=choices.STANDARDIZATION_METHOD)
     standardization_key = models.CharField("Standardization key", max_length=255, null=True, blank=True)
 
     panels = [

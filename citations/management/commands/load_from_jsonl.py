@@ -40,6 +40,22 @@ class Command(BaseCommand):
         els = citation.citation_code.split('^c')
         citation.citation_code = '-'.join(els)
 
+    def _standardize_year(self, citation):
+        try:
+            std_year = standardizer.document_publication_date(citation.year, only_year=True)
+        except (TypeError, InvalidFormatError, InvalidStringError):
+            std_year = None
+
+        citation.year = std_year
+        
+    def _standardize_volume(self, citation):
+        try:
+            std_vol = standardizer.issue_volume(citation.volume)
+        except (TypeError, standardizer.ImpossibleConvertionToIntError, standardizer.InvalidRomanNumeralError):
+            std_vol = None
+
+        citation.volume = std_vol
+
     def handle(self, *args, **options):
         filename = options.get('citations')
 
@@ -75,8 +91,8 @@ class Command(BaseCommand):
                         setattr(cit, target, value)
 
                 self._standardize_citation_code(cit)
-                   
-                try:
+                self._standardize_year(cit)
+                self._standardize_volume(cit)
                 citations.append(cit)
 
                 counter += 1

@@ -114,6 +114,9 @@ clean_dangling_images:  ## Remove all dangling images
 clean_dangling_volumes:  ## Remove all dangling volumes
 	@docker volume rm $$(docker volume ls -f dangling=true -q)
 
+clean_project_containers:  ## Remove all containers with "core" on name
+	@docker rm -f $$(docker ps -a --filter=name='core*' -q)
+
 clean_project_images:  ## Remove all images with "core" on name
 	@docker rmi -f $$(docker images --filter=reference='*core*' -q)
 

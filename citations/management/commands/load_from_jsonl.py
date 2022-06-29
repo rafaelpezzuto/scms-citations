@@ -9,6 +9,9 @@ from scielo_scholarly_data.dates import (InvalidFormatError, InvalidStringError)
 from citations.models import Citation
 
 
+LOADING_BULK_SIZE = int(os.environ.get('LOADING_BULK_SIZE', '100000'))
+
+
 class Command(BaseCommand):
     help = '''Importa os dados de citações de um arquivo JSONL.'''
 

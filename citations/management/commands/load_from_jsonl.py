@@ -63,10 +63,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR(f'Arquivo de citações não encontrado: {filename}'))
             return
 
-        try:
-            self.run_import(filename, self.field_mapping)
-        except subprocess.CalledProcessError as e:
-            self.stdout.write(self.style.ERROR(f'Erro ao executar comando: {e.cmd}'))
+        self.run_import(filename, self.field_mapping)
 
     def run_import(self, file, field_mapping):
         self.stdout.write(f'Importando dados do JSONL {file} para o PostgreSQL')
@@ -78,10 +75,6 @@ class Command(BaseCommand):
 
             for row in fin:
                 json_row = json.loads(row)
-
-                counter += 1
-                if counter % 1000 == 0:
-                    self.stdout.write(f'{counter} linhas processadas')
                 
                 cit = Citation()
                 for f in field_mapping:
